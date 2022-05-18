@@ -1,8 +1,8 @@
-# Wave Portal (buildspace\_ project)
+# Flight Delay Insurance Dapp (TCC)
 
 ### Big picture of this project:
 
-- Write a smart contract
+- Write an insurance smart contract
 - Deploy the smart contract to the blockchain
 - Build a client website (frontend)
 
