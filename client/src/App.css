@@ -24,11 +24,38 @@
   margin-top: 16px;
 }
 
-.waveButton {
+.bio span {
+  color: #bd93f9;
+}
+
+.buttons {
   cursor: pointer;
   margin-top: 16px;
   padding: 8px;
   border: 0;
   border-radius: 5px;
-  
+}
+
+.forms {
+  margin: 24px auto;
+  text-align: center;
+}
+
+.flightForm {
+  display: flexbox;
+  flex-direction: column;
+}
+
+.flightNumber {
+  padding: 8px;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
 }
