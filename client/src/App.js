@@ -8,6 +8,7 @@ import FlightCard from './components/FlightCard'
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState('')
   const [flightNumer, setFlightNumber] = useState('')
+  const [notFoundFlight, setNotFoundFlight] = useState(false)
   const [flight, setFlight] = useState()
 
   const contractAddress = '0x87A6D7Cc5136dd981535830D2DCdc07323de0082'
@@ -19,8 +20,10 @@ const App = () => {
       .get(`/${flightNumber}`)
       .then((response) => {
         setFlight(response.data)
+        setNotFoundFlight(false)
       })
       .catch((err) => {
+        setNotFoundFlight(true)
         console.log(err)
       })
   }
@@ -142,6 +145,12 @@ const App = () => {
                   value={flightNumer}
                   onChange={handleChange}
                 />
+                {notFoundFlight && (
+                  <div>
+                    <p>🤔 🤔 🤔 </p>
+                    <p>voo não encontrado!</p>
+                  </div>
+                )}
               </div>
               <div>
                 <input
@@ -158,9 +167,16 @@ const App = () => {
           <div className="flightCard">
             <FlightCard {...flight}></FlightCard>
             <div className="buttonInsuranceWrapper">
-              <button className="buttonInsurance" onClick={connectWallet}>
-                Solicitar Seguro
+              <button
+                className="buttons back"
+                onClick={() => {
+                  setFlight(null)
+                  setFlightNumber(null)
+                }}
+              >
+                Voltar
               </button>
+              <button className="buttonInsurance">Solicitar Seguro 🚀</button>
             </div>
           </div>
         )}
