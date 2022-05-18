@@ -2,14 +2,33 @@ import React, { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import './App.css'
 import abi from './utils/WavePortal.json'
+import api from './services/api'
 
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState('')
-  const [miningStatus, setMiningStatus] = useState(false)
+  const [flightNumer, setFlightNumber] = useState('')
+  const [flight, setFlight] = useState()
 
   const contractAddress = '0x87A6D7Cc5136dd981535830D2DCdc07323de0082'
 
   const contractABI = abi.abi
+
+  const getFlightInformation = (flightNumber) => {
+    api
+      .get(`/${flightNumber}`)
+      .then((response) => {
+        setFlight(response.data)
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  }
+
+  const handleChange = (event) => {
+    setFlightNumber(event.target.value)
+
+    console.log('value is: ', event.target.value)
+  }
 
   const checkIfWalletIsConnected = async () => {
     try {
@@ -73,11 +92,9 @@ const App = () => {
         console.log('Retrivied total wave count...', count.toNumber())
 
         const waveTxn = await wavePortalContract.wave()
-        setMiningStatus(true)
         console.log('Mining...', waveTxn.hash)
 
         await waveTxn.wait()
-        setMiningStatus(false)
         console.log('Mined --', waveTxn.hash)
 
         count = await wavePortalContract.getTotalWaves()
@@ -93,6 +110,7 @@ const App = () => {
 
   useEffect(() => {
     checkIfWalletIsConnected()
+    console.log(flightNumer)
   }, [])
 
   return (
@@ -113,13 +131,15 @@ const App = () => {
 
         {currentAccount && (
           <div className="forms">
-            <form className="flightForm">
+            <div className="flightForm">
               <div>
                 <input
                   className="flightNumber"
                   type="number"
                   name="flightNumber"
                   placeholder="número de voo"
+                  value={flightNumer}
+                  onChange={handleChange}
                 />
               </div>
               <div>
@@ -127,10 +147,19 @@ const App = () => {
                   className="buttons"
                   type="submit"
                   value="Pesquisar voo"
-                  onClick={wave}
+                  onClick={() => getFlightInformation(flightNumer)}
                 />
               </div>
-            </form>
+            </div>
+          </div>
+        )}
+        {flight && (
+          <div className="flightInformation">
+            <p>companhia aérea: {flight?.airlinecompany}</p>
+            <p>número de voo: {flight?.flightnumber}</p>
+            <p>Data do voo: {flight?.departuredate}</p>
+            <p>prêmio do seguro: {flight?.premium}</p>
+            <p>recompensa do seguro: {flight?.payout}</p>
           </div>
         )}
       </div>
