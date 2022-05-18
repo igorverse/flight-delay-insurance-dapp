@@ -1,0 +1,16 @@
+.flightInformation {
+  border: solid 1px;
+  padding: 8px;
+  border-radius: 4px;
+  color: #bd93f9;
+  width: 70%;
+  margin: 16px auto 4px auto;
+}
+
+.flightInformation p {
+  color: gray;
+}
+
+.flightInformation span {
+  color: black
+}

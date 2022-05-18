@@ -3,6 +3,7 @@ import { ethers } from 'ethers'
 import './App.css'
 import abi from './utils/WavePortal.json'
 import api from './services/api'
+import FlightCard from './components/FlightCard'
 
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState('')
@@ -129,7 +130,7 @@ const App = () => {
           </button>
         )}
 
-        {currentAccount && (
+        {currentAccount && !flight && (
           <div className="forms">
             <div className="flightForm">
               <div>
@@ -154,12 +155,13 @@ const App = () => {
           </div>
         )}
         {flight && (
-          <div className="flightInformation">
-            <p>companhia aérea: {flight?.airlinecompany}</p>
-            <p>número de voo: {flight?.flightnumber}</p>
-            <p>Data do voo: {flight?.departuredate}</p>
-            <p>prêmio do seguro: {flight?.premium}</p>
-            <p>recompensa do seguro: {flight?.payout}</p>
+          <div className="flightCard">
+            <FlightCard {...flight}></FlightCard>
+            <div className="buttonInsuranceWrapper">
+              <button className="buttonInsurance" onClick={connectWallet}>
+                Solicitar Seguro
+              </button>
+            </div>
           </div>
         )}
       </div>

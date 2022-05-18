@@ -28,7 +28,7 @@
   color: #bd93f9;
 }
 
-.buttons {
+.buttons, .buttonInsurance {
   cursor: pointer;
   margin-top: 16px;
   padding: 8px;
@@ -58,4 +58,12 @@ input::-webkit-inner-spin-button {
 
 input[type=number] {
   -moz-appearance: textfield;
+}
+
+.buttonInsuranceWrapper {
+  text-align: center;
+}
+
+.buttonInsurance {
+  background-color: #bd93f9;
 }
