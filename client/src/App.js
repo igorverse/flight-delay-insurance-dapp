@@ -7,11 +7,13 @@ import FlightCard from './components/FlightCard'
 
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState('')
-  const [flightNumer, setFlightNumber] = useState('')
+  const [flightNumber, setFlightNumber] = useState('')
   const [notFoundFlight, setNotFoundFlight] = useState(false)
   const [flight, setFlight] = useState()
   const [allInsurances, setAllInsurances] = useState([])
-  const [isFill, setIsFill] = useState(false)
+  const [isFilled, setIsFilled] = useState(false)
+  const [isAnalyzed, setIsAnalyzed] = useState(false)
+  const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
 
   const contractAddress = '0xC27d44B877E431EdCaaFE277b5BcB482B13522B3'
 
@@ -34,9 +36,9 @@ const App = () => {
     setFlightNumber(event.target.value)
 
     if (event.target.value.length > 0) {
-      setIsFill(true)
+      setIsFilled(true)
     } else {
-      setIsFill(false)
+      setIsFilled(false)
     }
   }
 
@@ -90,6 +92,15 @@ const App = () => {
     try {
       const { ethereum } = window
 
+      setIsAlreadyRegistered(false)
+
+      for (let insurance of allInsurances) {
+        if (insurance.flightNumber.toNumber() === Number(flightNumber)) {
+          setIsAlreadyRegistered(true)
+          throw new Error('Já foi solicitado seguro para este voo')
+        }
+      }
+
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum)
         const signer = provider.getSigner()
@@ -102,12 +113,15 @@ const App = () => {
         let count = await verxusInsuranceContract.getTotalInsurances()
         console.log('Retrivied total insurance count...', count.toNumber())
 
+        const { airlinecompany, flightnumber, premium, payout, departuredate } =
+          flight
+
         const insuranceTxn = await verxusInsuranceContract.insurance(
-          'ada',
-          42,
-          100,
-          1000,
-          1654889400,
+          airlinecompany,
+          flightnumber,
+          premium,
+          payout,
+          +new Date(departuredate),
           false
         )
         console.log('Mining...', insuranceTxn.hash)
@@ -155,7 +169,7 @@ const App = () => {
             timestamp: new Date(insurance.timestamp * 1000),
           })
         })
-        setAllInsurances(insurancesCleaned)
+        setAllInsurances(insurancesCleaned.reverse())
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -163,7 +177,6 @@ const App = () => {
       console.log(error)
     }
   }
-
   useEffect(() => {
     checkIfWalletIsConnected()
   }, [])
@@ -176,15 +189,15 @@ const App = () => {
             <p>{currentAccount}</p>
           </div>
         ) : (
-          <p className="disconnected">• Carteira Desconectada</p>
+          <p className="disconnected">• carteira desconectada</p>
         )}
       </div>
       <div className="mainContainer">
         <div className="dataContainer">
-          <div className="header">✈️ Proteja-se contra voos cancelados!</div>
+          <div className="header">✈️ proteja-se contra voos cancelados!</div>
 
           <div className="bio">
-            Contrate seu seguro paramétrico por meio de{' '}
+            contrate seu seguro paramétrico por meio de{' '}
             <span>smart contracts</span> baseados em <span>blockchain</span>
           </div>
 
@@ -203,7 +216,7 @@ const App = () => {
                     type="number"
                     name="flightNumber"
                     placeholder="número de voo"
-                    value={flightNumer}
+                    value={flightNumber}
                     onChange={handleChange}
                   />
                   {notFoundFlight && (
@@ -220,9 +233,9 @@ const App = () => {
                     value="Pesquisar voo"
                     required="required"
                     onClick={() => {
-                      if (isFill) {
-                        getFlightInformation(flightNumer)
-                        setIsFill(false)
+                      if (isFilled) {
+                        getFlightInformation(flightNumber)
+                        setIsFilled(false)
                       }
                     }}
                   />
@@ -233,6 +246,11 @@ const App = () => {
           {flight && (
             <div className="flightCard">
               <FlightCard {...flight}></FlightCard>
+              {isAlreadyRegisterd && (
+                <p className="registeredFlight">
+                  você já contratou seguro para este voo 🙃
+                </p>
+              )}
               <div className="buttonInsuranceWrapper">
                 <button
                   className="buttons back"
@@ -249,22 +267,60 @@ const App = () => {
               </div>
             </div>
           )}
-
-          {allInsurances.map((insurance, index) => {
-            if (insurance.address.toLowerCase() === currentAccount) {
-              return (
-                <div key={index}>
-                  <div>airlineCompany: {insurance.airlineCompany}</div>
-                  <div>flightNumber: {insurance.flightNumber.toNumber()}</div>
-                  <div>premium: {insurance.premium.toNumber()}</div>
-                  <div>payout: {insurance.payout.toNumber()}</div>
-                  <div>departureDate: {insurance.departureDate.toNumber()}</div>
-                  <div>isFlightDelayed: {insurance.isFlightDelayed}</div>
-                  <div>Time: {insurance.timestamp.toString()}</div>
-                </div>
-              )
-            }
-          })}
+          <div className="contracts">
+            <h2>seus contratos:</h2>
+            {allInsurances.map((insurance, index) => {
+              if (insurance.address.toLowerCase() === currentAccount) {
+                return (
+                  <div key={index} className="contract">
+                    <div>
+                      <span>companhia aérea:</span> {insurance.airlineCompany}
+                    </div>
+                    <div>
+                      <span>número de voo: </span>{' '}
+                      {insurance.flightNumber.toNumber()}
+                    </div>
+                    <div>
+                      <span>prêmio:</span> {insurance.premium.toNumber()}
+                    </div>
+                    <div>
+                      <span>recompensa:</span> {insurance.payout.toNumber()}
+                    </div>
+                    <div>
+                      <span>data de partida:</span>{' '}
+                      {insurance.departureDate.toNumber()}
+                    </div>
+                    <div>
+                      <span>voo cancelado:</span>{' '}
+                      {insurance.isFlightDelayed.toString()}
+                    </div>
+                    <div>
+                      <span>data de registro:</span>{' '}
+                      {insurance.timestamp.toString()}
+                    </div>
+                    {Date.now() + 3600 > insurance.departureDate.toNumber() &&
+                    !isAnalyzed ? (
+                      <div className="buttonContractWrapper">
+                        <button className="buttonContract">
+                          solicitar análise 🔬
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="activeContract">contrato ativo</p>
+                    )}
+                  </div>
+                )
+              }
+            })}
+            {!allInsurances.some(
+              (insurance) => insurance.address.toLowerCase() === currentAccount
+            ) && (
+              <div className="noPolicies">
+                <p className="sad">😞</p>
+                <p>você ainda não contratou nenhum seguro</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

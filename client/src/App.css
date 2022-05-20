@@ -41,7 +41,7 @@
   color: #bd93f9;
 }
 
-.buttons, .buttonInsurance {
+.buttons, .buttonInsurance, .buttonContract {
   cursor: pointer;
   margin-top: 16px;
   padding: 8px;
@@ -73,14 +73,64 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+.registeredFlight {
+  text-align: center;
+}
+
 .buttonInsuranceWrapper {
   text-align: center;
 }
 
-.buttonInsurance {
+.buttonInsurance, .buttonContract {
   background-color: #bd93f9;
 }
 
 .back {
   margin-right: 24px;
 }
+
+.contracts {
+  margin-top: 48px;
+  display: flex;
+  flex-direction: column;
+}
+
+.noPolicies p {
+  text-align: center;
+  margin: 0;
+}
+
+.noPolicies {
+  margin-top: 64px;
+}
+
+.sad{
+  font-size: 48px;
+}
+
+.contract {
+  color: #282a36;
+  margin: 4px;
+  padding: 16px;
+  border-radius: 4px;
+  background-color: #EBEBF0;
+}
+
+.contract div {
+  color: black;
+  padding-bottom: 4px;
+}
+
+.contract span {
+  color: gray
+}
+
+.buttonContractWrapper {
+  text-align: center;
+}
+
+.activeContract {
+  color: #00C853;
+  text-align: center;
+}
+
