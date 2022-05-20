@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "hardhat/console.sol";
 
-contract VerxusInsurance {
+contract InsuranceProvider {
     uint256 totalInsurances;
 
     event NewInsurance(

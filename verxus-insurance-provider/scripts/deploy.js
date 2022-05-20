@@ -6,7 +6,7 @@ const main = async () => {
   console.log('Account balance: ', accountBalance.toString())
 
   const insuranceContractFactory = await hre.ethers.getContractFactory(
-    'VerxusInsurance'
+    'InsuranceProvider'
   )
   const insuranceContract = await insuranceContractFactory.deploy()
   await insuranceContract.deployed()

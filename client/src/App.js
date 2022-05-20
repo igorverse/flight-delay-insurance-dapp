@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import './App.css'
-import abi from './utils/VerxusInsurance.json'
+import abi from './utils/InsuranceProvider.json'
 import api from './services/api'
 import FlightCard from './components/FlightCard'
 
@@ -11,8 +11,9 @@ const App = () => {
   const [notFoundFlight, setNotFoundFlight] = useState(false)
   const [flight, setFlight] = useState()
   const [allInsurances, setAllInsurances] = useState([])
+  const [isFill, setIsFill] = useState(false)
 
-  const contractAddress = '0x6b424bb1fa74E75F276B603de670CA7D5C877FfD'
+  const contractAddress = '0xC27d44B877E431EdCaaFE277b5BcB482B13522B3'
 
   const contractABI = abi.abi
 
@@ -32,7 +33,11 @@ const App = () => {
   const handleChange = (event) => {
     setFlightNumber(event.target.value)
 
-    console.log('value is: ', event.target.value)
+    if (event.target.value.length > 0) {
+      setIsFill(true)
+    } else {
+      setIsFill(false)
+    }
   }
 
   const checkIfWalletIsConnected = async () => {
@@ -111,6 +116,8 @@ const App = () => {
         console.log('Mined --', insuranceTxn.hash)
 
         count = await verxusInsuranceContract.getTotalInsurances()
+
+        getAllInsurances()
 
         console.log('Retrieved total insurance count...', count.toNumber())
       } else {
@@ -211,7 +218,13 @@ const App = () => {
                     className="buttons"
                     type="submit"
                     value="Pesquisar voo"
-                    onClick={() => getFlightInformation(flightNumer)}
+                    required="required"
+                    onClick={() => {
+                      if (isFill) {
+                        getFlightInformation(flightNumer)
+                        setIsFill(false)
+                      }
+                    }}
                   />
                 </div>
               </div>
@@ -240,14 +253,7 @@ const App = () => {
           {allInsurances.map((insurance, index) => {
             if (insurance.address.toLowerCase() === currentAccount) {
               return (
-                <div
-                  key={index}
-                  style={{
-                    backgroundColor: 'OldLace',
-                    marginTop: '16px',
-                    padding: '8px',
-                  }}
-                >
+                <div key={index}>
                   <div>airlineCompany: {insurance.airlineCompany}</div>
                   <div>flightNumber: {insurance.flightNumber.toNumber()}</div>
                   <div>premium: {insurance.premium.toNumber()}</div>
