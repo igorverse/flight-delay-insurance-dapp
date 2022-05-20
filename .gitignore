@@ -7,4 +7,4 @@ typechain
 #Hardhat files
 cache
 artifacts
-my-wave-portal/hardhat.config.js
+verxus-insurance/hardhat.config.js

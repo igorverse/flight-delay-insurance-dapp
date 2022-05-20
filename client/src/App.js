@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { ethers } from 'ethers'
 import './App.css'
-import abi from './utils/WavePortal.json'
+import abi from './utils/VerxusInsurance.json'
 import api from './services/api'
 import FlightCard from './components/FlightCard'
 
@@ -10,8 +10,9 @@ const App = () => {
   const [flightNumer, setFlightNumber] = useState('')
   const [notFoundFlight, setNotFoundFlight] = useState(false)
   const [flight, setFlight] = useState()
+  const [allInsurances, setAllInsurances] = useState([])
 
-  const contractAddress = '0x87A6D7Cc5136dd981535830D2DCdc07323de0082'
+  const contractAddress = '0x6b424bb1fa74E75F276B603de670CA7D5C877FfD'
 
   const contractABI = abi.abi
 
@@ -51,6 +52,7 @@ const App = () => {
         const account = accounts[0]
         console.log('Found an authorized account:', account)
         setCurrentAccount(account)
+        getAllInsurances()
       } else {
         console.log('No authorized account found')
       }
@@ -79,31 +81,74 @@ const App = () => {
     }
   }
 
-  const wave = async () => {
+  const askForInsurance = async () => {
     try {
       const { ethereum } = window
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum)
         const signer = provider.getSigner()
-        const wavePortalContract = new ethers.Contract(
+        const verxusInsuranceContract = new ethers.Contract(
           contractAddress,
           contractABI,
           signer
         )
 
-        let count = await wavePortalContract.getTotalWaves()
-        console.log('Retrivied total wave count...', count.toNumber())
+        let count = await verxusInsuranceContract.getTotalInsurances()
+        console.log('Retrivied total insurance count...', count.toNumber())
 
-        const waveTxn = await wavePortalContract.wave()
-        console.log('Mining...', waveTxn.hash)
+        const insuranceTxn = await verxusInsuranceContract.insurance(
+          'ada',
+          42,
+          100,
+          1000,
+          1654889400,
+          false
+        )
+        console.log('Mining...', insuranceTxn.hash)
 
-        await waveTxn.wait()
-        console.log('Mined --', waveTxn.hash)
+        await insuranceTxn.wait()
+        console.log('Mined --', insuranceTxn.hash)
 
-        count = await wavePortalContract.getTotalWaves()
+        count = await verxusInsuranceContract.getTotalInsurances()
 
-        console.log('Retrieved total wave count...', count.toNumber())
+        console.log('Retrieved total insurance count...', count.toNumber())
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const getAllInsurances = async () => {
+    try {
+      const { ethereum } = window
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum)
+        const signer = provider.getSigner()
+        const verxusInsuranceContract = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        )
+
+        const insurances = await verxusInsuranceContract.getAllInsurances()
+
+        let insurancesCleaned = []
+        insurances.forEach((insurance) => {
+          insurancesCleaned.push({
+            address: insurance.insured,
+            airlineCompany: insurance.airlineCompany,
+            flightNumber: insurance.flightNumber,
+            premium: insurance.premium,
+            payout: insurance.payout,
+            departureDate: insurance.departureDate,
+            isFlightDelayed: insurance.isFlightDelayed,
+            timestamp: new Date(insurance.timestamp * 1000),
+          })
+        })
+        setAllInsurances(insurancesCleaned)
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -114,72 +159,107 @@ const App = () => {
 
   useEffect(() => {
     checkIfWalletIsConnected()
-    console.log(flightNumer)
   }, [])
 
   return (
-    <div className="mainContainer">
-      <div className="dataContainer">
-        <div className="header">✈️ Proteja-se contra voos cancelados!</div>
+    <div className="appContainer">
+      <div className="connectedWallet">
+        {currentAccount ? (
+          <div className="connected">
+            <p>{currentAccount}</p>
+          </div>
+        ) : (
+          <p className="disconnected">• Carteira Desconectada</p>
+        )}
+      </div>
+      <div className="mainContainer">
+        <div className="dataContainer">
+          <div className="header">✈️ Proteja-se contra voos cancelados!</div>
 
-        <div className="bio">
-          Contrate seu seguro paramétrico por meio de{' '}
-          <span>smart contracts</span> baseados em <span>blockchain</span>
+          <div className="bio">
+            Contrate seu seguro paramétrico por meio de{' '}
+            <span>smart contracts</span> baseados em <span>blockchain</span>
+          </div>
+
+          {!currentAccount && (
+            <button className="buttons" onClick={connectWallet}>
+              Conecte sua carteira 😉
+            </button>
+          )}
+
+          {currentAccount && !flight && (
+            <div className="forms">
+              <div className="flightForm">
+                <div>
+                  <input
+                    className="flightNumber"
+                    type="number"
+                    name="flightNumber"
+                    placeholder="número de voo"
+                    value={flightNumer}
+                    onChange={handleChange}
+                  />
+                  {notFoundFlight && (
+                    <div>
+                      <p>🤔 🤔 🤔 </p>
+                      <p>voo não encontrado!</p>
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <input
+                    className="buttons"
+                    type="submit"
+                    value="Pesquisar voo"
+                    onClick={() => getFlightInformation(flightNumer)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          {flight && (
+            <div className="flightCard">
+              <FlightCard {...flight}></FlightCard>
+              <div className="buttonInsuranceWrapper">
+                <button
+                  className="buttons back"
+                  onClick={() => {
+                    setFlight(null)
+                    setFlightNumber(null)
+                  }}
+                >
+                  Voltar
+                </button>
+                <button className="buttonInsurance" onClick={askForInsurance}>
+                  Solicitar Seguro 🚀
+                </button>
+              </div>
+            </div>
+          )}
+
+          {allInsurances.map((insurance, index) => {
+            if (insurance.address.toLowerCase() === currentAccount) {
+              return (
+                <div
+                  key={index}
+                  style={{
+                    backgroundColor: 'OldLace',
+                    marginTop: '16px',
+                    padding: '8px',
+                  }}
+                >
+                  <div>airlineCompany: {insurance.airlineCompany}</div>
+                  <div>flightNumber: {insurance.flightNumber.toNumber()}</div>
+                  <div>premium: {insurance.premium.toNumber()}</div>
+                  <div>payout: {insurance.payout.toNumber()}</div>
+                  <div>departureDate: {insurance.departureDate.toNumber()}</div>
+                  <div>isFlightDelayed: {insurance.isFlightDelayed}</div>
+                  <div>Time: {insurance.timestamp.toString()}</div>
+                </div>
+              )
+            }
+          })}
         </div>
-
-        {!currentAccount && (
-          <button className="buttons" onClick={connectWallet}>
-            Conecte sua carteira 😉
-          </button>
-        )}
-
-        {currentAccount && !flight && (
-          <div className="forms">
-            <div className="flightForm">
-              <div>
-                <input
-                  className="flightNumber"
-                  type="number"
-                  name="flightNumber"
-                  placeholder="número de voo"
-                  value={flightNumer}
-                  onChange={handleChange}
-                />
-                {notFoundFlight && (
-                  <div>
-                    <p>🤔 🤔 🤔 </p>
-                    <p>voo não encontrado!</p>
-                  </div>
-                )}
-              </div>
-              <div>
-                <input
-                  className="buttons"
-                  type="submit"
-                  value="Pesquisar voo"
-                  onClick={() => getFlightInformation(flightNumer)}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-        {flight && (
-          <div className="flightCard">
-            <FlightCard {...flight}></FlightCard>
-            <div className="buttonInsuranceWrapper">
-              <button
-                className="buttons back"
-                onClick={() => {
-                  setFlight(null)
-                  setFlightNumber(null)
-                }}
-              >
-                Voltar
-              </button>
-              <button className="buttonInsurance">Solicitar Seguro 🚀</button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )

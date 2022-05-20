@@ -1,8 +1,21 @@
+.connectedWallet {
+  text-align: end;
+  margin: 10px;
+}
+
+.disconnected {
+  color: #ff5555;
+}
+
+.connected p {
+  color: #ff79c6;
+}
+
 .mainContainer {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-top: 64px;
+  margin-top: 54px;
 }
 
 .dataContainer {
