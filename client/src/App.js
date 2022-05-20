@@ -4,6 +4,7 @@ import './App.css'
 import abi from './utils/InsuranceProvider.json'
 import api from './services/api'
 import FlightCard from './components/FlightCard'
+import Loader from './components/Loader'
 
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState('')
@@ -14,6 +15,7 @@ const App = () => {
   const [isFilled, setIsFilled] = useState(false)
   const [isAnalyzed, setIsAnalyzed] = useState(false)
   const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
 
   const contractAddress = '0xC27d44B877E431EdCaaFE277b5BcB482B13522B3'
 
@@ -92,8 +94,6 @@ const App = () => {
     try {
       const { ethereum } = window
 
-      setIsAlreadyRegistered(false)
-
       for (let insurance of allInsurances) {
         if (insurance.flightNumber.toNumber() === Number(flightNumber)) {
           setIsAlreadyRegistered(true)
@@ -124,10 +124,12 @@ const App = () => {
           +new Date(departuredate),
           false
         )
-        console.log('Mining...', insuranceTxn.hash)
+
+        setIsLoading(true)
 
         await insuranceTxn.wait()
-        console.log('Mined --', insuranceTxn.hash)
+
+        setIsLoading(false)
 
         count = await verxusInsuranceContract.getTotalInsurances()
 
@@ -236,6 +238,7 @@ const App = () => {
                       if (isFilled) {
                         getFlightInformation(flightNumber)
                         setIsFilled(false)
+                        setIsAlreadyRegistered(false)
                       }
                     }}
                   />
@@ -246,6 +249,7 @@ const App = () => {
           {flight && (
             <div className="flightCard">
               <FlightCard {...flight}></FlightCard>
+              <div className="loading">{isLoading && <Loader></Loader>}</div>
               {isAlreadyRegisterd && (
                 <p className="registeredFlight">
                   você já contratou seguro para este voo 🙃

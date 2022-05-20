@@ -73,6 +73,10 @@ input[type=number] {
   -moz-appearance: textfield;
 }
 
+.loading {
+  margin: 8px auto;
+}
+
 .registeredFlight {
   text-align: center;
 }
