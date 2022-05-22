@@ -64,6 +64,10 @@ contract Insurance {
 contract InsuranceFactory {
     Insurance[] insurances;
     address provider = msg.sender;
+    address providerContractAddress = address(this);
+    bool isContractActive = true;
+
+    constructor() payable {}
 
     event NewInsurance(
         address indexed insured,
@@ -82,6 +86,9 @@ contract InsuranceFactory {
         uint256 _payout,
         uint256 _departureDate
     ) public payable {
+        require(isContractActive);
+        require(hasBalanceToCoverPayout(_premium));
+
         Insurance insurance = new Insurance(
             provider,
             msg.sender,
@@ -103,7 +110,11 @@ contract InsuranceFactory {
             block.timestamp
         );
 
-        payable(provider).transfer(_premium);
+        require(msg.value == _premium);
+        payable(providerContractAddress).transfer(msg.value);
+
+        (bool success, ) = (address(insurance)).call{value: _payout}("");
+        require(success, "Failed to withdraw money from contract.");
     }
 
     function getAllInsurances() public view returns (Insurance[] memory) {
@@ -122,6 +133,24 @@ contract InsuranceFactory {
 
     function getBalance() public view returns (uint256) {
         return address(this).balance;
+    }
+
+    function endContract() public {
+        require(msg.sender == provider);
+        isContractActive = false;
+        getResidualEth();
+    }
+
+    function hasBalanceToCoverPayout(uint256 _payout)
+        public
+        view
+        returns (bool)
+    {
+        if (_payout >= address(providerContractAddress).balance) {
+            return false;
+        }
+
+        return true;
     }
 
     receive() external payable {}
