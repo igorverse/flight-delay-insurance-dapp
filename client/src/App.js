@@ -85,6 +85,7 @@ const App = () => {
 
       console.log('Connected', accounts[0])
       setCurrentAccount(accounts[0])
+      getAllInsurances()
     } catch (error) {
       console.log(error)
     }
@@ -95,7 +96,10 @@ const App = () => {
       const { ethereum } = window
 
       for (let insurance of allInsurances) {
-        if (insurance.flightNumber.toNumber() === Number(flightNumber)) {
+        if (
+          insurance.flightNumber.toNumber() === Number(flightNumber) &&
+          insurance.address.toLowerCase() === currentAccount.toLowerCase()
+        ) {
           setIsAlreadyRegistered(true)
           throw new Error('Já foi solicitado seguro para este voo')
         }
@@ -128,7 +132,7 @@ const App = () => {
         setIsLoading(true)
 
         await insuranceTxn.wait()
-
+        console.log('Mined --', insuranceTxn.hash)
         setIsLoading(false)
 
         count = await verxusInsuranceContract.getTotalInsurances()
@@ -160,6 +164,7 @@ const App = () => {
 
         let insurancesCleaned = []
         insurances.forEach((insurance) => {
+          console.log(insurance)
           insurancesCleaned.push({
             address: insurance.insured,
             airlineCompany: insurance.airlineCompany,
@@ -260,7 +265,7 @@ const App = () => {
                   className="buttons back"
                   onClick={() => {
                     setFlight(null)
-                    setFlightNumber(null)
+                    setFlightNumber('')
                   }}
                 >
                   Voltar
