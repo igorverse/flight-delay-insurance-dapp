@@ -122,8 +122,9 @@ contract InsuranceFactory {
         return provider;
     }
 
-    function depositPremium() public payable {
-        payable(providerContractAddress).transfer(msg.value);
+    function depositPremium(uint256 _premium) public payable {
+        _premium = msg.value;
+        payable(providerContractAddress).transfer(_premium);
     }
 
     function getResidualEth() public payable {
