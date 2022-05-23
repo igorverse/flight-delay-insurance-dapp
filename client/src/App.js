@@ -18,7 +18,7 @@ const App = () => {
   const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const contractAddress = '0xb39323E8cea75098CF4e2e53dBcc15B69fC518c3'
+  const contractAddress = '0xD0A4cb80e640F2aF0E6D6BE9f1951d4eF964e0A4'
 
   const insuranceFactoryContractABI = abiInsuranceFactory.abi
   const insuranceContractABI = abiInsurance.abi
@@ -253,34 +253,23 @@ const App = () => {
 
         const insurances = await verxusInsuranceContract.getAllInsurances()
 
-        console.log('segunda-feira tega: ', insurances)
+        console.log(insurances)
 
         let insurancesCleaned = []
         insurances.forEach((insurance) => {
-          const insuranceContract = new ethers.Contract(
-            insurance,
-            insuranceContractABI,
-            signer
-          )
-
-          console.log(insuranceContract)
-
+          console.log(insurance)
           insurancesCleaned.push({
-            address: insuranceContract.insured,
-            airlineCompany: insuranceContract.airlineCompany,
-            flightNumber: insuranceContract.flightNumber,
-            premium: insuranceContract.premium,
-            payout: insuranceContract.payout,
-            departureDate: insuranceContract.departureDate,
-            isFlightDelayed: insuranceContract.isFlightDelayed,
-            timestamp: new Date(insuranceContract.timestamp * 1000),
+            address: insurance.contractAddress,
+            insured: insurance.insured,
+            airlineCompany: insurance.airlineCompany,
+            flightNumber: insurance.flightNumber,
+            premium: insurance.premium,
+            payout: insurance.payout,
+            departureDate: insurance.departureDate,
+            timestamp: new Date(insurance.timestamp * 1000),
           })
         })
-        console.log(insurancesCleaned)
-
         setAllInsurances(insurancesCleaned.reverse())
-
-        console.log(allInsurances)
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -380,10 +369,10 @@ const App = () => {
               </div>
             </div>
           )}
-          {/* <div className="contracts">
+          <div className="contracts">
             <h2>seus contratos:</h2>
             {allInsurances.map((insurance, index) => {
-              if (insurance.address.toLowerCase() === currentAccount) {
+              if (insurance.insured.toLowerCase() === currentAccount) {
                 return (
                   <div key={index} className="contract">
                     <div>
@@ -402,10 +391,6 @@ const App = () => {
                     <div>
                       <span>data de partida:</span>{' '}
                       {insurance.departureDate.toNumber()}
-                    </div>
-                    <div>
-                      <span>voo cancelado:</span>{' '}
-                      {insurance.isFlightDelayed.toString()}
                     </div>
                     <div>
                       <span>data de registro:</span>{' '}
@@ -429,14 +414,14 @@ const App = () => {
               }
             })}
             {!allInsurances.some(
-              (insurance) => insurance.address.toLowerCase() === currentAccount
+              (insurance) => insurance.insured.toLowerCase() === currentAccount
             ) && (
               <div className="noPolicies">
                 <p className="sad">😞</p>
                 <p>você ainda não contratou nenhum seguro</p>
               </div>
             )}
-          </div> */}
+          </div>
         </div>
       </div>
     </div>
