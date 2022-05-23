@@ -87,7 +87,7 @@ contract InsuranceFactory {
         uint256 _departureDate
     ) public payable {
         require(isContractActive);
-        require(hasBalanceToCoverPayout(_premium));
+        require(hasBalanceToCoverPayout(_payout));
 
         Insurance insurance = new Insurance(
             provider,
@@ -110,9 +110,6 @@ contract InsuranceFactory {
             block.timestamp
         );
 
-        require(msg.value == _premium);
-        payable(providerContractAddress).transfer(msg.value);
-
         (bool success, ) = (address(insurance)).call{value: _payout}("");
         require(success, "Failed to withdraw money from contract.");
     }
@@ -123,6 +120,10 @@ contract InsuranceFactory {
 
     function getProvider() public view returns (address) {
         return provider;
+    }
+
+    function depositPremium() public payable {
+        payable(providerContractAddress).transfer(msg.value);
     }
 
     function getResidualEth() public payable {
