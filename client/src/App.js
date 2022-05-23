@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
-import { ethers } from 'ethers'
+import { BigNumber, ethers } from 'ethers'
 import './App.css'
-import abi from './utils/InsuranceProvider.json'
+import abiInsuranceFactory from './utils/InsuranceFactory.json'
+import abiInsurance from './utils/Insurance.json'
 import api from './services/api'
 import FlightCard from './components/FlightCard'
 import Loader from './components/Loader'
@@ -17,9 +18,10 @@ const App = () => {
   const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const contractAddress = '0x3D27275A540Ac0C108f97a1a29090821e68DFa49'
+  const contractAddress = '0xb39323E8cea75098CF4e2e53dBcc15B69fC518c3'
 
-  const contractABI = abi.abi
+  const insuranceFactoryContractABI = abiInsuranceFactory.abi
+  const insuranceContractABI = abiInsurance.abi
 
   const getFlightInformation = (flightNumber) => {
     api
@@ -91,61 +93,115 @@ const App = () => {
     }
   }
 
+  // const askForInsurance = async () => {
+  //   try {
+  //     const { ethereum } = window
+
+  //     for (let insurance of allInsurances) {
+  //       if (
+  //         insurance.flightNumber.toNumber() === Number(flightNumber) &&
+  //         insurance.address.toLowerCase() === currentAccount.toLowerCase()
+  //       ) {
+  //         setIsAlreadyRegistered(true)
+  //         throw new Error('Já foi solicitado seguro para este voo')
+  //       }
+  //     }
+
+  //     if (ethereum) {
+  //       const provider = new ethers.providers.Web3Provider(ethereum)
+  //       const signer = provider.getSigner()
+  //       const verxusInsuranceContract = new ethers.Contract(
+  //         contractAddress,
+  //         contractABI,
+  //         signer
+  //       )
+
+  //       let count = await verxusInsuranceContract.getTotalInsurances()
+  //       console.log('Retrivied total insurance count...', count.toNumber())
+
+  //       const { airlinecompany, flightnumber, premium, payout, departuredate } =
+  //         flight
+
+  //       const insuranceTxn = await verxusInsuranceContract.insurance(
+  //         airlinecompany,
+  //         flightnumber,
+  //         premium,
+  //         payout,
+  //         +new Date(departuredate),
+  //         false
+  //       )
+
+  //       setIsLoading(true)
+
+  //       await insuranceTxn.wait()
+  //       console.log('Mined --', insuranceTxn.hash)
+  //       setIsLoading(false)
+
+  //       count = await verxusInsuranceContract.getTotalInsurances()
+
+  //       const premiumInEth = premium / 10000
+
+  //       await verxusInsuranceContract.fundContract(
+  //         ethers.utils.parseEther(premiumInEth)
+  //       )
+
+  //       getAllInsurances()
+
+  //       console.log('Retrieved total insurance count...', count.toNumber())
+  //     } else {
+  //       console.log("Ethereum object doesn't exist!")
+  //     }
+  //   } catch (error) {
+  //     console.log(error)
+  //   }
+  // }
+
   const askForInsurance = async () => {
     try {
       const { ethereum } = window
-
-      for (let insurance of allInsurances) {
-        if (
-          insurance.flightNumber.toNumber() === Number(flightNumber) &&
-          insurance.address.toLowerCase() === currentAccount.toLowerCase()
-        ) {
-          setIsAlreadyRegistered(true)
-          throw new Error('Já foi solicitado seguro para este voo')
-        }
-      }
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum)
         const signer = provider.getSigner()
         const verxusInsuranceContract = new ethers.Contract(
           contractAddress,
-          contractABI,
+          insuranceFactoryContractABI,
           signer
         )
-
-        let count = await verxusInsuranceContract.getTotalInsurances()
-        console.log('Retrivied total insurance count...', count.toNumber())
 
         const { airlinecompany, flightnumber, premium, payout, departuredate } =
           flight
 
-        const insuranceTxn = await verxusInsuranceContract.insurance(
+        const premiumToEth = String(premium / 10000)
+
+        const depositPremium = signer.sendTransaction({
+          from: currentAccount,
+          to: contractAddress,
+          value: ethers.utils.parseEther(premiumToEth),
+        })
+
+        await depositPremium
+
+        const insuranceTxn = await verxusInsuranceContract.createInsurance(
           airlinecompany,
           flightnumber,
           premium,
           payout,
-          +new Date(departuredate),
-          false
+          +new Date(departuredate)
         )
 
         setIsLoading(true)
 
         await insuranceTxn.wait()
+
         console.log('Mined --', insuranceTxn.hash)
         setIsLoading(false)
 
-        count = await verxusInsuranceContract.getTotalInsurances()
-
-        const premiumInEth = premium / 10000
-
-        await verxusInsuranceContract.fundContract(
-          ethers.utils.parseEther(premiumInEth)
-        )
+        const count = await verxusInsuranceContract.getAllInsurances()
 
         getAllInsurances()
 
-        console.log('Retrieved total insurance count...', count.toNumber())
+        console.log('Retrieved total insurance count...', count)
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -162,7 +218,7 @@ const App = () => {
         const signer = provider.getSigner()
         const verxusInsuranceContract = new ethers.Contract(
           contractAddress,
-          contractABI,
+          insuranceFactoryContractABI,
           signer
         )
 
@@ -191,27 +247,40 @@ const App = () => {
         const signer = provider.getSigner()
         const verxusInsuranceContract = new ethers.Contract(
           contractAddress,
-          contractABI,
+          insuranceFactoryContractABI,
           signer
         )
 
         const insurances = await verxusInsuranceContract.getAllInsurances()
 
+        console.log('segunda-feira tega: ', insurances)
+
         let insurancesCleaned = []
         insurances.forEach((insurance) => {
-          console.log(insurance)
+          const insuranceContract = new ethers.Contract(
+            insurance,
+            insuranceContractABI,
+            signer
+          )
+
+          console.log(insuranceContract)
+
           insurancesCleaned.push({
-            address: insurance.insured,
-            airlineCompany: insurance.airlineCompany,
-            flightNumber: insurance.flightNumber,
-            premium: insurance.premium,
-            payout: insurance.payout,
-            departureDate: insurance.departureDate,
-            isFlightDelayed: insurance.isFlightDelayed,
-            timestamp: new Date(insurance.timestamp * 1000),
+            address: insuranceContract.insured,
+            airlineCompany: insuranceContract.airlineCompany,
+            flightNumber: insuranceContract.flightNumber,
+            premium: insuranceContract.premium,
+            payout: insuranceContract.payout,
+            departureDate: insuranceContract.departureDate,
+            isFlightDelayed: insuranceContract.isFlightDelayed,
+            timestamp: new Date(insuranceContract.timestamp * 1000),
           })
         })
+        console.log(insurancesCleaned)
+
         setAllInsurances(insurancesCleaned.reverse())
+
+        console.log(allInsurances)
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -311,7 +380,7 @@ const App = () => {
               </div>
             </div>
           )}
-          <div className="contracts">
+          {/* <div className="contracts">
             <h2>seus contratos:</h2>
             {allInsurances.map((insurance, index) => {
               if (insurance.address.toLowerCase() === currentAccount) {
@@ -367,7 +436,7 @@ const App = () => {
                 <p>você ainda não contratou nenhum seguro</p>
               </div>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
