@@ -17,7 +17,7 @@ const App = () => {
   const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
-  const contractAddress = '0xC27d44B877E431EdCaaFE277b5BcB482B13522B3'
+  const contractAddress = '0x3D27275A540Ac0C108f97a1a29090821e68DFa49'
 
   const contractABI = abi.abi
 
@@ -137,9 +137,44 @@ const App = () => {
 
         count = await verxusInsuranceContract.getTotalInsurances()
 
+        const premiumInEth = premium / 10000
+
+        await verxusInsuranceContract.fundContract(
+          ethers.utils.parseEther(premiumInEth)
+        )
+
         getAllInsurances()
 
         console.log('Retrieved total insurance count...', count.toNumber())
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const askForPayout = async () => {
+    try {
+      const { ethereum } = window
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum)
+        const signer = provider.getSigner()
+        const verxusInsuranceContract = new ethers.Contract(
+          contractAddress,
+          contractABI,
+          signer
+        )
+
+        const oracleIsFlightDelayed = getFlightInformation('0')
+
+        console.log(oracleIsFlightDelayed)
+
+        const payoutResponse = await verxusInsuranceContract.callOracle(
+          oracleIsFlightDelayed
+        )
+
+        console.log(payoutResponse)
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -271,7 +306,7 @@ const App = () => {
                   Voltar
                 </button>
                 <button className="buttonInsurance" onClick={askForInsurance}>
-                  Solicitar Seguro 🚀
+                  solicitar seguro 🚀
                 </button>
               </div>
             </div>
@@ -310,7 +345,10 @@ const App = () => {
                     {Date.now() + 3600 > insurance.departureDate.toNumber() &&
                     !isAnalyzed ? (
                       <div className="buttonContractWrapper">
-                        <button className="buttonContract">
+                        <button
+                          className="buttonContract"
+                          onClick={() => askForPayout()}
+                        >
                           solicitar análise 🔬
                         </button>
                       </div>

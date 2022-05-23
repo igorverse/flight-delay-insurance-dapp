@@ -6,9 +6,13 @@ const main = async () => {
   console.log('Account balance: ', accountBalance.toString())
 
   const insuranceContractFactory = await hre.ethers.getContractFactory(
-    'InsuranceProvider'
+    'InsuranceFactory'
   )
-  const insuranceContract = await insuranceContractFactory.deploy()
+
+  const insuranceContract = await insuranceContractFactory.deploy({
+    value: hre.ethers.utils.parseEther('0.2'),
+  })
+
   await insuranceContract.deployed()
 
   console.log('Verxus Insurance address: ', insuranceContract.address)
