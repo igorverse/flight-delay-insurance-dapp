@@ -3,10 +3,10 @@ pragma solidity ^0.8.0;
 contract Insurance {
     address public insurer;
     address public insured;
-    string airlineCompany;
+    string public airlineCompany;
     uint256 public flightNumber;
     uint256 public premium;
-    uint256 payout;
+    uint256 public payout;
     bool public isFlightDelayed;
     uint256 public departureDate;
     uint256 public timestamp;
@@ -62,10 +62,22 @@ contract Insurance {
 }
 
 contract InsuranceFactory {
-    Insurance[] insurances;
     address provider = msg.sender;
     address providerContractAddress = address(this);
     bool isContractActive = true;
+
+    struct InsuranceInformations {
+        address contractAddress;
+        address insured;
+        string airlineCompany;
+        uint256 flightNumber;
+        uint256 premium;
+        uint256 payout;
+        uint256 departureDate;
+        uint256 timestamp;
+    }
+
+    InsuranceInformations[] insurances;
 
     constructor() payable {}
 
@@ -98,7 +110,19 @@ contract InsuranceFactory {
             _payout,
             _departureDate
         );
-        insurances.push(insurance);
+
+        insurances.push(
+            InsuranceInformations(
+                address(insurance),
+                msg.sender,
+                _airlineCompany,
+                _flightNumber,
+                _premium,
+                _payout,
+                _departureDate,
+                block.timestamp
+            )
+        );
 
         emit NewInsurance(
             msg.sender,
@@ -114,7 +138,11 @@ contract InsuranceFactory {
         require(success, "Failed to withdraw money from contract.");
     }
 
-    function getAllInsurances() public view returns (Insurance[] memory) {
+    function getAllInsurances()
+        public
+        view
+        returns (InsuranceInformations[] memory)
+    {
         return insurances;
     }
 
