@@ -1,131 +1,182 @@
-// SPDX-License-Identifier: UNLICENSED
-
 pragma solidity ^0.8.0;
 
-import "hardhat/console.sol";
-
 contract Insurance {
-    uint256 totalInsurances;
-
-    event NewInsurance(
-        address indexed from,
-        uint256 timestamp,
-        string message,
-        uint256 flightNumber,
-        uint256 premium,
-        uint256 payout,
-        uint256 departureDate,
-        bool isFlightDelayed
-    );
-
-    struct Insurance {
-        address insured;
-        string airlineCompany;
-        uint256 flightNumber;
-        uint256 premium;
-        uint256 payout;
-        uint256 departureDate;
-        bool isFlightDelayed;
-        uint256 timestamp;
-    }
-
-    Insurance[] insurances;
+    address public insurer;
+    address public insured;
+    string public airlineCompany;
+    uint256 public flightNumber;
+    uint256 public premium;
+    uint256 public payout;
+    bool public isFlightDelayed;
+    uint256 public departureDate;
+    uint256 public timestamp;
+    bool isOracleAlreadyCalled = false;
 
     constructor(
+        address _insurer,
         address _insured,
         string memory _airlineCompany,
         uint256 _flightNumber,
         uint256 _premium,
         uint256 _payout,
-        uint256 _departureDate,
-        bool _isFlightDelayed,
-        uint256 _timestamp
-    ) public payable {
+        uint256 _departureDate
+    ) public {
+        insurer = _insurer;
         insured = _insured;
         airlineCompany = _airlineCompany;
         flightNumber = _flightNumber;
         premium = _premium;
         payout = _payout;
         departureDate = _departureDate;
-        isFlightDelayed = _isFlightDelayed;
-        timestamp = _timestamp;
+        payout = _payout;
+        isFlightDelayed = false;
+        timestamp = block.timestamp;
     }
 
-    function insurance(
+    function transferPayout(address payable recipient) public payable {
+        require(msg.sender == insured);
+
+        recipient.transfer(payout);
+    }
+
+    function callOracle(bool _oracleInformation) public {
+        require(msg.sender == insured);
+        require(!isOracleAlreadyCalled);
+
+        isFlightDelayed = _oracleInformation;
+
+        if (isFlightDelayed) {
+            transferPayout(payable(insured));
+        } else {
+            transferPayout(payable(insurer));
+        }
+
+        isOracleAlreadyCalled = true;
+    }
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    receive() external payable {}
+}
+
+contract InsuranceFactory {
+    address provider = msg.sender;
+    address providerContractAddress = address(this);
+    bool isContractActive = true;
+
+    struct InsuranceInformations {
+        address contractAddress;
+        address insured;
+        string airlineCompany;
+        uint256 flightNumber;
+        uint256 premium;
+        uint256 payout;
+        uint256 departureDate;
+        uint256 timestamp;
+    }
+
+    InsuranceInformations[] insurances;
+
+    constructor() payable {}
+
+    event NewInsurance(
+        address indexed insured,
+        string airlineCompany,
+        uint256 flightNumber,
+        uint256 premium,
+        uint256 payout,
+        uint256 departureDate,
+        uint256 timestamp
+    );
+
+    function createInsurance(
         string memory _airlineCompany,
         uint256 _flightNumber,
         uint256 _premium,
         uint256 _payout,
-        uint256 _departureDate,
-        bool _isFlightDelayed
-    ) public {
-        totalInsurances += 1;
-        console.log(
-            "%s got insured w/ airlineCompany %s ",
+        uint256 _departureDate
+    ) public payable {
+        require(isContractActive);
+        require(hasBalanceToCoverPayout(_payout));
+
+        Insurance insurance = new Insurance(
+            provider,
             msg.sender,
-            _airlineCompany
+            _airlineCompany,
+            _flightNumber,
+            _premium,
+            _payout,
+            _departureDate
         );
 
         insurances.push(
-            Insurance(
+            InsuranceInformations(
+                address(insurance),
                 msg.sender,
                 _airlineCompany,
                 _flightNumber,
                 _premium,
                 _payout,
                 _departureDate,
-                _isFlightDelayed,
                 block.timestamp
             )
         );
 
         emit NewInsurance(
             msg.sender,
-            block.timestamp,
             _airlineCompany,
             _flightNumber,
             _premium,
             _payout,
             _departureDate,
-            _isFlightDelayed
+            block.timestamp
         );
+
+        (bool success, ) = (address(insurance)).call{value: _payout}("");
+        require(success, "Failed to withdraw money from contract.");
     }
 
-    function getAllInsurances() public view returns (Insurance[] memory) {
+    function getAllInsurances()
+        public
+        view
+        returns (InsuranceInformations[] memory)
+    {
         return insurances;
     }
 
-    function getTotalInsurances() public view returns (uint256) {
-        console.log("We have %d total insurances!", totalInsurances);
-        return totalInsurances;
+    function getProvider() public view returns (address) {
+        return provider;
     }
 
-    function isFlightDelayed(bool oracleInformation) public returns (bool) {
-        if (oracleInformation) {}
+    function getResidualEth() public payable {
+        require(msg.sender == provider);
+
+        payable(provider).transfer(address(this).balance);
+    }
+
+    function getBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
+
+    function endContract() public {
+        require(msg.sender == provider);
+        isContractActive = false;
+        getResidualEth();
+    }
+
+    function hasBalanceToCoverPayout(uint256 _payout)
+        public
+        view
+        returns (bool)
+    {
+        if (_payout >= address(providerContractAddress).balance) {
+            return false;
+        }
+
         return true;
     }
-}
 
-contract InsuranceProvider {
-    function createInsurance(
-        address _insured,
-        string memory _airlineCompany,
-        uint256 _flightNumber,
-        uint256 _premium,
-        uint256 _payout,
-        uint256 _departureDate,
-        bool _isFlightDelayed,
-        uint256 _timestamp
-    ) public {
-        Insurance insurance = new Insurance(
-            _insured,
-            _airlineCompany,
-            _flightNumber,
-            _premium,
-            _payout,
-            _departureDate,
-            _isFlightDelayed,
-            _timestamp
-        );
-    }
+    receive() external payable {}
 }
