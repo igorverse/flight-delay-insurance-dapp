@@ -6,6 +6,7 @@ import "hardhat/console.sol";
 
 contract InsuranceProvider {
     uint256 totalInsurances;
+    address provider = msg.sender;
 
     event NewInsurance(
         address indexed from,
@@ -31,9 +32,7 @@ contract InsuranceProvider {
 
     Insurance[] insurances;
 
-    constructor() {
-        console.log("I AM SMART CONTRACT. POG.");
-    }
+    constructor() payable {}
 
     function insurance(
         string memory _airlineCompany,
@@ -75,6 +74,19 @@ contract InsuranceProvider {
         );
     }
 
+    function fundContract(uint256 _premium) public payable {
+        require(msg.value == _premium);
+        payable(address(this)).transfer(msg.value);
+    }
+
+    function callOracle(bool isFlightDelayed) public payable {
+        if (isFlightDelayed) {
+            payable(msg.sender).transfer(msg.value);
+        } else {
+            payable(provider).transfer(msg.value);
+        }
+    }
+
     function getAllInsurances() public view returns (Insurance[] memory) {
         return insurances;
     }
@@ -83,4 +95,10 @@ contract InsuranceProvider {
         console.log("We have %d total insurances!", totalInsurances);
         return totalInsurances;
     }
+
+    function getProvider() public view returns (address) {
+        return provider;
+    }
+
+    receive() external payable {}
 }
