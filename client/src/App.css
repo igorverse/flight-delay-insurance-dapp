@@ -125,8 +125,22 @@ input[type=number] {
   padding-bottom: 4px;
 }
 
+.contract .showContract {
+  text-align: center;
+  margin-bottom: 12px;
+}
+
 .contract span {
   color: gray
+}
+
+.showContract a {
+  text-decoration: none;
+  color: #ff79c6;
+}
+
+.showContract a:hover {
+  text-decoration: dashed;
 }
 
 .buttonContractWrapper {

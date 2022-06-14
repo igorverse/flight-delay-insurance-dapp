@@ -6,6 +6,7 @@ import abiInsurance from './utils/Insurance.json'
 import api from './services/api'
 import FlightCard from './components/FlightCard'
 import Loader from './components/Loader'
+import { convertDateFormat } from './utils/utils'
 
 const App = () => {
   const [currentAccount, setCurrentAccount] = useState('')
@@ -14,7 +15,6 @@ const App = () => {
   const [flight, setFlight] = useState()
   const [allInsurances, setAllInsurances] = useState([])
   const [isFilled, setIsFilled] = useState(false)
-  const [isAnalyzed, setIsAnalyzed] = useState(false)
   const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -63,7 +63,7 @@ const App = () => {
         const account = accounts[0]
         console.log('Found an authorized account:', account)
         setCurrentAccount(account)
-        getAllInsurances()
+        getAllInsurancesInfo()
       } else {
         console.log('No authorized account found')
       }
@@ -87,78 +87,25 @@ const App = () => {
 
       console.log('Connected', accounts[0])
       setCurrentAccount(accounts[0])
-      getAllInsurances()
+      getAllInsurancesInfo()
     } catch (error) {
       console.log(error)
     }
   }
 
-  // const askForInsurance = async () => {
-  //   try {
-  //     const { ethereum } = window
-
-  //     for (let insurance of allInsurances) {
-  //       if (
-  //         insurance.flightNumber.toNumber() === Number(flightNumber) &&
-  //         insurance.address.toLowerCase() === currentAccount.toLowerCase()
-  //       ) {
-  //         setIsAlreadyRegistered(true)
-  //         throw new Error('Já foi solicitado seguro para este voo')
-  //       }
-  //     }
-
-  //     if (ethereum) {
-  //       const provider = new ethers.providers.Web3Provider(ethereum)
-  //       const signer = provider.getSigner()
-  //       const verxusInsuranceContract = new ethers.Contract(
-  //         contractAddress,
-  //         contractABI,
-  //         signer
-  //       )
-
-  //       let count = await verxusInsuranceContract.getTotalInsurances()
-  //       console.log('Retrivied total insurance count...', count.toNumber())
-
-  //       const { airlinecompany, flightnumber, premium, payout, departuredate } =
-  //         flight
-
-  //       const insuranceTxn = await verxusInsuranceContract.insurance(
-  //         airlinecompany,
-  //         flightnumber,
-  //         premium,
-  //         payout,
-  //         +new Date(departuredate),
-  //         false
-  //       )
-
-  //       setIsLoading(true)
-
-  //       await insuranceTxn.wait()
-  //       console.log('Mined --', insuranceTxn.hash)
-  //       setIsLoading(false)
-
-  //       count = await verxusInsuranceContract.getTotalInsurances()
-
-  //       const premiumInEth = premium / 10000
-
-  //       await verxusInsuranceContract.fundContract(
-  //         ethers.utils.parseEther(premiumInEth)
-  //       )
-
-  //       getAllInsurances()
-
-  //       console.log('Retrieved total insurance count...', count.toNumber())
-  //     } else {
-  //       console.log("Ethereum object doesn't exist!")
-  //     }
-  //   } catch (error) {
-  //     console.log(error)
-  //   }
-  // }
-
   const askForInsurance = async () => {
     try {
       const { ethereum } = window
+
+      for (let insurance of allInsurances) {
+        if (
+          insurance.flightNumber.toNumber() === Number(flightNumber) &&
+          insurance.insured.toLowerCase() === currentAccount.toLowerCase()
+        ) {
+          setIsAlreadyRegistered(true)
+          throw new Error('Já foi solicitado seguro para este voo')
+        }
+      }
 
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum)
@@ -172,12 +119,10 @@ const App = () => {
         const { airlinecompany, flightnumber, premium, payout, departuredate } =
           flight
 
-        const premiumToEth = String(premium / 10000)
-
         const depositPremium = signer.sendTransaction({
           from: currentAccount,
           to: contractAddress,
-          value: ethers.utils.parseEther(premiumToEth),
+          value: ethers.utils.parseEther(String(premium)),
         })
 
         await depositPremium
@@ -185,8 +130,8 @@ const App = () => {
         const insuranceTxn = await verxusInsuranceContract.createInsurance(
           airlinecompany,
           flightnumber,
-          premium,
-          payout,
+          ethers.utils.parseEther(String(premium)),
+          ethers.utils.parseEther(String(payout)),
           +new Date(departuredate)
         )
 
@@ -199,7 +144,7 @@ const App = () => {
 
         const count = await verxusInsuranceContract.getAllInsurances()
 
-        getAllInsurances()
+        getAllInsurancesInfo()
 
         console.log('Retrieved total insurance count...', count)
       } else {
@@ -210,27 +155,28 @@ const App = () => {
     }
   }
 
-  const askForPayout = async () => {
+  const askForPayout = async (contractAddress, flightNumber) => {
+    const oracleFlightStatus = await api
+      .get(`/${flightNumber}`)
+      .then((response) => response.data.isdelayedorcanceled)
+      .catch((err) => {
+        console.log(err)
+      })
+
     try {
       const { ethereum } = window
       if (ethereum) {
         const provider = new ethers.providers.Web3Provider(ethereum)
         const signer = provider.getSigner()
-        const verxusInsuranceContract = new ethers.Contract(
+        const insuranceContract = new ethers.Contract(
           contractAddress,
-          insuranceFactoryContractABI,
+          insuranceContractABI,
           signer
         )
+        console.log(contractAddress)
+        console.log('flightStatus>>', oracleFlightStatus)
 
-        const oracleIsFlightDelayed = getFlightInformation('0')
-
-        console.log(oracleIsFlightDelayed)
-
-        const payoutResponse = await verxusInsuranceContract.callOracle(
-          oracleIsFlightDelayed
-        )
-
-        console.log(payoutResponse)
+        await insuranceContract.callOracle(oracleFlightStatus)
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -239,7 +185,7 @@ const App = () => {
     }
   }
 
-  const getAllInsurances = async () => {
+  const getAllInsurancesInfo = async () => {
     try {
       const { ethereum } = window
       if (ethereum) {
@@ -259,7 +205,7 @@ const App = () => {
         insurances.forEach((insurance) => {
           console.log(insurance)
           insurancesCleaned.push({
-            address: insurance.contractAddress,
+            contractAddress: insurance.contractAddress,
             insured: insurance.insured,
             airlineCompany: insurance.airlineCompany,
             flightNumber: insurance.flightNumber,
@@ -375,6 +321,14 @@ const App = () => {
               if (insurance.insured.toLowerCase() === currentAccount) {
                 return (
                   <div key={index} className="contract">
+                    <div className="showContract">
+                      <a
+                        href={`https://rinkeby.etherscan.io/address/${insurance.contractAddress}`}
+                        target="_blank"
+                      >
+                        {insurance.contractAddress}
+                      </a>
+                    </div>
                     <div>
                       <span>companhia aérea:</span> {insurance.airlineCompany}
                     </div>
@@ -383,25 +337,35 @@ const App = () => {
                       {insurance.flightNumber.toNumber()}
                     </div>
                     <div>
-                      <span>prêmio:</span> {insurance.premium.toNumber()}
+                      <span>prêmio:</span>{' '}
+                      {ethers.utils.formatEther(insurance.premium.toString())}{' '}
+                      ETH
                     </div>
                     <div>
-                      <span>recompensa:</span> {insurance.payout.toNumber()}
+                      <span>recompensa:</span>{' '}
+                      {ethers.utils.formatEther(insurance.payout.toString())}{' '}
+                      ETH
                     </div>
                     <div>
                       <span>data de partida:</span>{' '}
-                      {insurance.departureDate.toNumber()}
+                      {convertDateFormat(
+                        String(new Date(insurance.departureDate.toNumber()))
+                      )}
                     </div>
                     <div>
                       <span>data de registro:</span>{' '}
-                      {insurance.timestamp.toString()}
+                      {convertDateFormat(String(new Date()))}
                     </div>
-                    {Date.now() + 3600 > insurance.departureDate.toNumber() &&
-                    !isAnalyzed ? (
+                    {Date.now() + 3600 > insurance.departureDate.toNumber() ? (
                       <div className="buttonContractWrapper">
                         <button
                           className="buttonContract"
-                          onClick={() => askForPayout()}
+                          onClick={() =>
+                            askForPayout(
+                              insurance.contractAddress,
+                              insurance.flightNumber.toString()
+                            )
+                          }
                         >
                           solicitar análise 🔬
                         </button>
