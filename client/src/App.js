@@ -17,6 +17,7 @@ const App = () => {
   const [isFilled, setIsFilled] = useState(false)
   const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isLoadingOracle, setIsLoadingOracle] = useState(false)
   const [isFinished, setIsFinished] = useState(false)
   const [showStatus, setShowStatus] = useState(false)
   const [currentIndex, setCurrentIndex] = useState(-1)
@@ -177,13 +178,13 @@ const App = () => {
           signer
         )
 
-        setIsLoading(true)
+        setIsLoadingOracle(true)
         const oracleAnalyze = await insuranceContract.callOracle(
           oracleFlightStatus
         )
 
         await oracleAnalyze.wait()
-        setIsLoading(false)
+        setIsLoadingOracle(false)
         setShowStatus(false)
       } else {
         console.log("Ethereum object doesn't exist!")
@@ -416,7 +417,7 @@ const App = () => {
                               solicitar análise 🔬
                             </button>
                             <div className="loading">
-                              {isLoading && <Loader></Loader>}
+                              {isLoadingOracle && <Loader></Loader>}
                             </div>
                           </div>
                         ) : isFinished ? (
