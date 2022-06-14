@@ -14,10 +14,10 @@ const FlightCard = (props) => (
       data do voo: <span>{convertDateFormat(props?.departuredate)}</span>
     </p>
     <p>
-      prêmio do seguro: <span>{props?.premium}</span>
+      prêmio do seguro: <span>{props?.premium} ETH</span>
     </p>
     <p>
-      recompensa do seguro: <span>{props?.payout}</span>
+      recompensa do seguro: <span>{props?.payout} ETH</span>
     </p>
   </div>
 )

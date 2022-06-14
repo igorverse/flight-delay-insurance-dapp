@@ -10,7 +10,7 @@ const main = async () => {
   )
 
   const insuranceContract = await insuranceContractFactory.deploy({
-    value: hre.ethers.utils.parseEther('0.2'),
+    value: hre.ethers.utils.parseEther('0.5'),
   })
 
   await insuranceContract.deployed()

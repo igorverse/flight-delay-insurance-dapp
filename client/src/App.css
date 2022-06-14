@@ -41,7 +41,7 @@
   color: #bd93f9;
 }
 
-.buttons, .buttonInsurance, .buttonContract {
+.buttons, .buttonInsurance, .buttonContract, .statusButton {
   cursor: pointer;
   margin-top: 16px;
   padding: 8px;
@@ -134,6 +134,10 @@ input[type=number] {
   color: gray
 }
 
+.contract .statusButton {
+  text-align: center;
+}
+
 .showContract a {
   text-decoration: none;
   color: #ff79c6;
@@ -147,8 +151,21 @@ input[type=number] {
   text-align: center;
 }
 
+.statusButtonWrapper {
+  text-align: center;
+}
+
+.statusButton {
+  border: 1px solid;
+  border-color: #bd93f9;
+}
+
 .activeContract {
   color: #00C853;
   text-align: center;
 }
 
+.finishedContract {
+  color: #bd93f9;
+  text-align: center;
+}

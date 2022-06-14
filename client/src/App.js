@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { BigNumber, ethers } from 'ethers'
+import { ethers } from 'ethers'
 import './App.css'
 import abiInsuranceFactory from './utils/InsuranceFactory.json'
 import abiInsurance from './utils/Insurance.json'
@@ -17,8 +17,11 @@ const App = () => {
   const [isFilled, setIsFilled] = useState(false)
   const [isAlreadyRegisterd, setIsAlreadyRegistered] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isFinished, setIsFinished] = useState(false)
+  const [showStatus, setShowStatus] = useState(false)
+  const [currentIndex, setCurrentIndex] = useState(-1)
 
-  const contractAddress = '0xD0A4cb80e640F2aF0E6D6BE9f1951d4eF964e0A4'
+  const contractAddress = '0xD2012b1f5308C4991E776835b927cEa0eb758c25'
 
   const insuranceFactoryContractABI = abiInsuranceFactory.abi
   const insuranceContractABI = abiInsurance.abi
@@ -173,10 +176,37 @@ const App = () => {
           insuranceContractABI,
           signer
         )
-        console.log(contractAddress)
-        console.log('flightStatus>>', oracleFlightStatus)
 
-        await insuranceContract.callOracle(oracleFlightStatus)
+        setIsLoading(true)
+        const oracleAnalyze = await insuranceContract.callOracle(
+          oracleFlightStatus
+        )
+
+        await oracleAnalyze.wait()
+        setIsLoading(false)
+        setShowStatus(false)
+      } else {
+        console.log("Ethereum object doesn't exist!")
+      }
+    } catch (error) {
+      setIsLoading(false)
+      console.log(error)
+    }
+  }
+
+  const hasContractFinished = async (contractAddress) => {
+    try {
+      const { ethereum } = window
+      if (ethereum) {
+        const provider = new ethers.providers.Web3Provider(ethereum)
+
+        const contractBalance = await provider.getBalance(contractAddress)
+
+        const treatedContractBalance = ethers.utils.formatEther(contractBalance)
+
+        const hasFinished = treatedContractBalance === '0.0' ? true : false
+
+        setIsFinished(hasFinished)
       } else {
         console.log("Ethereum object doesn't exist!")
       }
@@ -203,7 +233,6 @@ const App = () => {
 
         let insurancesCleaned = []
         insurances.forEach((insurance) => {
-          console.log(insurance)
           insurancesCleaned.push({
             contractAddress: insurance.contractAddress,
             insured: insurance.insured,
@@ -213,8 +242,10 @@ const App = () => {
             payout: insurance.payout,
             departureDate: insurance.departureDate,
             timestamp: new Date(insurance.timestamp * 1000),
+            isContractActive: true,
           })
         })
+
         setAllInsurances(insurancesCleaned.reverse())
       } else {
         console.log("Ethereum object doesn't exist!")
@@ -354,24 +385,46 @@ const App = () => {
                     </div>
                     <div>
                       <span>data de registro:</span>{' '}
-                      {convertDateFormat(String(new Date()))}
+                      {convertDateFormat(String(new Date()), true)}
                     </div>
-                    {Date.now() + 3600 > insurance.departureDate.toNumber() ? (
-                      <div className="buttonContractWrapper">
-                        <button
-                          className="buttonContract"
-                          onClick={() =>
-                            askForPayout(
-                              insurance.contractAddress,
-                              insurance.flightNumber.toString()
-                            )
-                          }
-                        >
-                          solicitar análise 🔬
-                        </button>
+                    <div className="statusButtonWrapper">
+                      <button
+                        className="statusButton"
+                        onClick={() => {
+                          hasContractFinished(insurance.contractAddress)
+                          setShowStatus(true)
+                          setCurrentIndex(index)
+                        }}
+                      >
+                        checar status do contrato
+                      </button>
+                    </div>
+                    {showStatus && index === currentIndex && (
+                      <div>
+                        {Date.now() + 3600 >
+                          insurance.departureDate.toNumber() && !isFinished ? (
+                          <div className="buttonContractWrapper">
+                            <button
+                              className="buttonContract"
+                              onClick={() =>
+                                askForPayout(
+                                  insurance.contractAddress,
+                                  insurance.flightNumber.toString()
+                                )
+                              }
+                            >
+                              solicitar análise 🔬
+                            </button>
+                            <div className="loading">
+                              {isLoading && <Loader></Loader>}
+                            </div>
+                          </div>
+                        ) : isFinished ? (
+                          <p className="finishedContract">contrato analisado</p>
+                        ) : (
+                          <p className="activeContract">contrato ativo</p>
+                        )}
                       </div>
-                    ) : (
-                      <p className="activeContract">contrato ativo</p>
                     )}
                   </div>
                 )

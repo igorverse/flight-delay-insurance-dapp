@@ -1,9 +1,9 @@
-exports.convertDateFormat = (timestampDate) => {
+exports.convertDateFormat = (timestampDate, isRegisterDate = false) => {
   const date = new Date(timestampDate)
   const year = date.getFullYear()
   const month = date.getMonth()
   const day = date.getDate()
-  const hours = date.getUTCHours()
+  const hours = isRegisterDate ? date.getHours() : date.getUTCHours()
   const minutes = date.getUTCMinutes()
 
   const monthName = {
