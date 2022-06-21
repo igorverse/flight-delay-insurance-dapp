@@ -1,13 +1,53 @@
 # Flight Delay Insurance Dapp (TCC)
+This is a proof of concept for my TCC. The main goal of this project is to allow asking for parametric flight insurances. So, if a flight got delayed or canceled, you can have a payout.
 
-### Big picture of this project:
+## How to run locally
 
-- Write an insurance smart contract
-- Deploy the smart contract to the blockchain
-- Build a client website (frontend)
+- npm install
 
-### Techs
+**If you want to generate your own rinkeby smart contract**, you will need to have an alchemy account and configure it inside a file called *hardhat.config.js* (verxus-insurance-provider/hardhat.config.js)
 
-- [nodejs (and npm)](https://nodejs.org/en/)
+```
+module.exports = {
+  solidity: '0.8.0',
+  networks: {
+    rinkeby: {
+      url: 'your_alchemy_provider_url',
+      accounts: [
+        'your_private_key',
+      ],
+    },
+  },
+}
+```
+In terminal:
+```
+cd verxus-insurance-provider
+npx hardhat run scripts/deploy.js --network rinkeby
+cd ..
+cd client
+npm start
+```
 
-== README.md IN CONSTRUCTION ==
+**If you want just to run the application:**
+
+```
+cd client
+npm start
+```
+
+How to run live application:
+
+https://verxus.vercel.app/
+
+## Techs
+
+- nodeJS
+- reactJS
+- solidity
+- hardhat
+- alchemy
+- rinkeby (ethereum)
+
+*Talk with me:* [linkedin](https://www.linkedin.com/in/oigorsilva/)
+
