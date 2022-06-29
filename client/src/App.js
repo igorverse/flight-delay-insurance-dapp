@@ -386,7 +386,7 @@ const App = () => {
                     </div>
                     <div>
                       <span>data de registro:</span>{' '}
-                      {convertDateFormat(String(new Date()), true)}
+                      {convertDateFormat(String(insurance.timestamp), true)}
                     </div>
                     <div className="statusButtonWrapper">
                       <button
